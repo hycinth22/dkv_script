@@ -1,0 +1,32 @@
+操作码	助记符	描述
+0x01	LOAD_CONST	加载常量 (操作数=常量索引)，压入栈
+0x02	LOAD_GLOBAL	加载全局变量 (操作数=变量索引)，压入栈
+0x03	STORE_GLOBAL	存储全局变量 (操作数=变量索引)，弹出栈
+0x04	LOAD_LOCAL	加载局部变量 (操作数=局部索引)，压入栈
+0x05	STORE_LOCAL	存储局部变量 (操作数=局部索引)，弹出栈
+
+0x10	NOT	按位取反
+0x11	INC	自增
+0x12	DEC	自减
+0x13	NEG	取相反数
+
+0x1A	ADD	加法
+0x1B	SUB	减法
+0x1C	MUL	乘法
+0x1D	DIV	除法
+
+0x20	CMP_EQ	相等比较
+0x21	CMP_NE	不相等比较
+0x22	CMP_LT	小于比较
+0x23	CMP_GT	大于比较
+0x24	CMP_LE	小于等于比较
+0x25	CMP_GE	大于等于比较
+
+0x50	JMP	无条件跳转 (操作数=偏移量)
+0x51	JZ	为零跳转 (操作数=偏移量)
+
+0x60	CALL	调用函数 (操作数=函数索引)
+0x61	RET	    函数返回
+
+0xFE	SYSCALL	执行系统调用
+0xFF    EXIT    正常退出程序

@@ -1,0 +1,12 @@
+let count: int = 0;
+  
+print("gsdds");
+print(123.4567);
+print(true);
+
+fn main() {
+    while count < 5 {
+        print(count + 42);
+        count = count + 1;
+    }
+}

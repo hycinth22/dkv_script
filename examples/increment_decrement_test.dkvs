@@ -1,0 +1,16 @@
+let count: int = 0;
+
+// 测试递增操作
+count++;
+count++;
+count++;
+
+// 测试递减操作
+count--;
+
+// 打印结果
+print(count); // 应该输出 2
+
+for count = 0; count < 100; count++ {
+    print(count);
+}
