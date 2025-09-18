@@ -323,6 +323,24 @@ impl Compiler {
                 let jz_offset = bytecode.len() - jz_pos - OPLEN;
                 self.set_arg_at(bytecode, jz_pos, jz_offset as u64);
             },
+            ASTNode::WhileLoop(condition, body) => {
+                let loop_start = bytecode.len();
+                // 生成求值字节码
+                self.visit_expression(condition, bytecode);
+                // 为 JZ 预留空间
+                let jz_pos = bytecode.len();
+                self.emit_opcode_with_arg(bytecode, OpCode::Jz, 0);
+
+                self.visit_block(body, bytecode);
+
+                // 跳回循环开始
+                let jmp_offset = loop_start as i64 - bytecode.len() as i64 - OPLEN as i64;
+                self.emit_opcode_with_arg(bytecode, OpCode::Jmp, jmp_offset as u64);
+
+                // 填充 JZ 的偏移量
+                let jz_offset = bytecode.len() - jz_pos - OPLEN;
+                self.set_arg_at(bytecode, jz_pos, jz_offset as u64);
+            },
             ASTNode::FunctionDef(name, params, body) => {
                 let func_index = self.functions.len() as u16;
                 self.function_map.insert(name.clone(), func_index);
