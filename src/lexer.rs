@@ -93,7 +93,7 @@ impl Lexer {
                 }
             },
             '"' => self.string(),
-            c if c.is_digit(10) => self.number(),
+            c if c.is_ascii_digit() => self.number(),
             c if c.is_alphabetic() || c == '_' => self.identifier(),
             _ => panic!("Unexpected character '{}' at line {}, column {}", c, self.line, self.column - 1),
         }
@@ -206,15 +206,15 @@ impl Lexer {
         let start = self.current - 1;
         let start_column = self.column - 1;
 
-        while !self.is_at_end() && self.peek().is_digit(10) {
+        while !self.is_at_end() && self.peek().is_ascii_digit() {
             self.advance();
             self.column += 1;
         }
 
-        if !self.is_at_end() && self.peek() == '.' && self.peek_next().is_digit(10) {
+        if !self.is_at_end() && self.peek() == '.' && self.peek_next().is_ascii_digit() {
             self.advance();
             self.column += 1;
-            while !self.is_at_end() && self.peek().is_digit(10) {
+            while !self.is_at_end() && self.peek().is_ascii_digit() {
                 self.advance();
                 self.column += 1;
             }

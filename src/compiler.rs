@@ -98,6 +98,12 @@ pub struct Compiler {
     in_global_scope: bool,
 }
 
+impl Default for Compiler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Compiler {
     pub fn new() -> Self {
         let mut syscall_map = HashMap::new();
@@ -123,7 +129,7 @@ impl Compiler {
         }
     }
 
-    pub fn compile(mut self, ast: Box<ASTNode>) -> CompileResult {
+    pub fn compile(mut self, ast: &ASTNode) -> CompileResult {
         self.add_constant(Constant::Nil);
         let mut entrypoint_bytecode = Vec::new();
         self.visit_ast_with_bytecode(ast, &mut entrypoint_bytecode);
@@ -144,67 +150,66 @@ impl Compiler {
         }
     }
     
-    fn visit_ast_with_bytecode(&mut self, ast: Box<ASTNode>, bytecode: &mut Vec<u8>) {
-        match *ast {
-            ASTNode::Program(statements) => {
+    fn visit_ast_with_bytecode(&mut self, ast: &ASTNode, bytecode: &mut Vec<u8>) {
+        if let ASTNode::Program(statements) = ast {
                 for stmt in statements {
                     self.visit_statement(stmt, bytecode);
                 }
-            },
-            _ => {}
+        } else {
+            panic!("ROOT node is not ASTNode::Program");
         }
     }
 
-    fn visit_block(&mut self, block: Box<ASTNode>, bytecode: &mut Vec<u8>) {
-        if let ASTNode::Block(statements) = *block {
+    fn visit_block(&mut self, block: &ASTNode, bytecode: &mut Vec<u8>) {
+        if let ASTNode::Block(statements) = block {
             for stmt in statements {
                 self.visit_statement(stmt, bytecode);
             }
         }
     }
 
-    fn visit_assignment(&mut self, name: String, expr: Box<ASTNode>, bytecode: &mut Vec<u8>) {
+    fn visit_assignment(&mut self, name: &str, expr: &ASTNode, bytecode: &mut Vec<u8>) {
         self.visit_expression(expr, bytecode);
 
-        if let Some(&var_index_value) = self.current_local_vars_map.get(&name) {
-            self.emit_store_local(bytecode, var_index_value as u8);
-        } else if let Some(&var_index_value) = self.global_var_map.get(&name) {
-            self.emit_store_global(bytecode, var_index_value as u16);
+        if let Some(var_index_value) = self.lookup_local(name) {
+            self.emit_store_local(bytecode, var_index_value);
+        } else if let Some(var_index_value) = self.lookup_global(name) {
+            self.emit_store_global(bytecode, var_index_value);
         } else {
             panic!("Unknown variable: {}", name);
         }
     }
 
-    fn visit_increment(&mut self, name: String, bytecode: &mut Vec<u8>) {
-        if let Some(&var_index_value) = self.current_local_vars_map.get(&name) {
-            self.emit_load_local(bytecode, var_index_value as u8);
+    fn visit_increment(&mut self, name: &str, bytecode: &mut Vec<u8>) {
+       if let Some(var_index_value) = self.lookup_local(name) {
+            self.emit_load_local(bytecode, var_index_value);
             self.emit_opcode(bytecode, OpCode::Inc);
-            self.emit_store_local(bytecode, var_index_value as u8);
-        } else if let Some(&var_index_value) = self.global_var_map.get(&name) {
-            self.emit_load_global(bytecode, var_index_value as u16);
+            self.emit_store_local(bytecode, var_index_value);
+        } else if let Some(var_index_value) = self.lookup_global(name) {
+            self.emit_load_global(bytecode, var_index_value);
             self.emit_opcode(bytecode, OpCode::Inc);
-            self.emit_store_global(bytecode, var_index_value as u16);
+            self.emit_store_global(bytecode, var_index_value);
         } else {
             panic!("Unknown variable: {}", name);
         }
     }
 
-    fn visit_decrement(&mut self, name: String, bytecode: &mut Vec<u8>) {
-        if let Some(&var_index_value) = self.current_local_vars_map.get(&name) {
-            self.emit_load_local(bytecode, var_index_value as u8);
+    fn visit_decrement(&mut self, name: &str, bytecode: &mut Vec<u8>) {
+        if let Some(var_index_value) = self.lookup_local(name) {
+            self.emit_load_local(bytecode, var_index_value);
             self.emit_opcode(bytecode, OpCode::Dec);
-            self.emit_store_local(bytecode, var_index_value as u8);
-        } else if let Some(&var_index_value) = self.global_var_map.get(&name) {
-            self.emit_load_global(bytecode, var_index_value as u16);
+            self.emit_store_local(bytecode, var_index_value);
+        } else if let Some(var_index_value) = self.lookup_global(name) {
+            self.emit_load_global(bytecode, var_index_value);
             self.emit_opcode(bytecode, OpCode::Dec);
-            self.emit_store_global(bytecode, var_index_value as u16);
+            self.emit_store_global(bytecode, var_index_value);
         } else {
             panic!("Unknown variable: {}", name);
         }
     }
 
-    fn visit_statement(&mut self, stmt: Box<ASTNode>, bytecode: &mut Vec<u8>) {
-        match *stmt {
+    fn visit_statement(&mut self, stmt: &ASTNode, bytecode: &mut Vec<u8>) {
+        match stmt {
             ASTNode::Block(statements) => {
                 for stmt in statements {
                     self.visit_statement(stmt, bytecode);
@@ -277,7 +282,7 @@ impl Compiler {
             ASTNode::ForLoop(init, condition, update, body) => {
                 // 初始化循环变量
                 if let Some(init) = init {
-                    if let ASTNode::Assignment(name, expr) = *init {
+                    if let ASTNode::Assignment(name, expr) = &**init {
                         self.visit_assignment(name, expr, bytecode);
                     } else {
                         panic!("For loop init must be an assignment");
@@ -298,7 +303,7 @@ impl Compiler {
                 self.visit_block(body, bytecode);
 
                 if let Some(update) = update {
-                    match *update {
+                    match &**update {
                         ASTNode::Assignment(name, expr) => self.visit_assignment(name, expr, bytecode),
                         ASTNode::Increment(var_name) => {
                             self.visit_increment(var_name, bytecode);
@@ -352,7 +357,7 @@ impl Compiler {
                 let local_count = self.current_local_vars.len() as u8;
 
                 self.functions.push(FunctionInfo {
-                    name,
+                    name: name.clone(),
                     param_count,
                     local_count,
                     bytecode,
@@ -367,13 +372,13 @@ impl Compiler {
                     self.visit_expression(arg, bytecode);
                 }
 
-                let syscall_num = self.syscall_map.get(&name).copied();
+                let syscall_num = self.syscall_map.get(name).copied();
                 if let Some(syscall_num) = syscall_num {
                     // 是系统调用，生成Syscall指令
                     self.emit_opcode_with_arg(bytecode, OpCode::Syscall, syscall_num as u64);
                 } else {
                     // 不是系统调用，继续使用Call指令
-                    let func_index = if let Some(index) = self.function_map.get(&name) {
+                    let func_index = if let Some(index) = self.function_map.get(name) {
                         *index
                     } else {
                         panic!("Unknown function: {}", name);
@@ -397,30 +402,30 @@ impl Compiler {
         }
     }
 
-    fn visit_expression(&mut self, expr: Box<ASTNode>, bytecode: &mut Vec<u8>) {
-        match *expr {
+    fn visit_expression(&mut self, expr: &ASTNode, bytecode: &mut Vec<u8>) {
+        match expr {
             ASTNode::IntLiteral(value) => {
-                let const_idx = self.add_constant(Constant::Int(value));
+                let const_idx = self.add_constant(Constant::Int(*value));
                 self.emit_load_const(bytecode, const_idx);
             },
             ASTNode::FloatLiteral(value) => {
-                let const_idx = self.add_constant(Constant::Float(value));
+                let const_idx = self.add_constant(Constant::Float(*value));
                 self.emit_load_const(bytecode, const_idx);
             }
             ASTNode::BoolLiteral(value) => {
-                let const_idx = self.add_constant(Constant::Bool(value));
+                let const_idx = self.add_constant(Constant::Bool(*value));
                 self.emit_load_const(bytecode, const_idx);
             }
             ASTNode::StringLiteral(value) => {
-                let const_idx = self.add_constant(Constant::String(value));
+                let const_idx = self.add_constant(Constant::String(value.clone()));
                 self.emit_load_const(bytecode, const_idx);
             }
             ASTNode::Identifier(name) => {
-                if let Some(local_index) = self.current_local_vars_map.get(&name) {
+                if let Some(local_index) = self.lookup_local(name) {
                     // 局部变量
-                    self.emit_load_local(bytecode, *local_index as u8);
-                } else if let Some(global_index) = self.global_var_map.get(&name) {
-                   self.emit_load_global(bytecode, *global_index as u16);
+                    self.emit_load_local(bytecode, local_index);
+                } else if let Some(global_index) = self.lookup_global(name) {
+                   self.emit_load_global(bytecode, global_index);
                 } else {
                     panic!("Unknown identifier: {}", name);
                 }
@@ -509,7 +514,7 @@ impl Compiler {
         self.emit_opcode_with_arg(bytecode, OpCode::StoreGlobal, global_index as u64);
     }
 
-    fn set_arg_at(&mut self, bytecode: &mut Vec<u8>, pc: usize, arg: u64) {
+    fn set_arg_at(&mut self, bytecode: &mut [u8], pc: usize, arg: u64) {
         assert!(pc + OPLEN <= bytecode.len(), "pc + OP_ARGOFF out of bounds {} {}", pc, bytecode.len());
         let arg_bytes = arg.to_le_bytes();
         for i in 0..OPLEN-OP_ARGOFF {

@@ -25,8 +25,8 @@ pub fn do_compile(source: &str) -> Result<CompileResult, Box<dyn std::error::Err
     let ast = parser.parse();
     
     // 编译
-    let mut compiler = Compiler::new();
-    let compile_result = compiler.compile(ast);
+    let compiler = Compiler::new();
+    let compile_result = compiler.compile(&ast);
     
     Ok(compile_result)
 }

@@ -77,7 +77,7 @@ fn main() {
 
 // 打印字节码的辅助函数
 fn print_bytecode(bytecode: &[u8]) {
-    println!("{:4}  {:10}\t\t{}", "  PC", "OPCODE", "ARG");
+    println!("{:4}  {:10}\t\tARG", "  PC", "OPCODE");
     let mut i = 0;
     while i < bytecode.len() {
         
@@ -125,7 +125,7 @@ fn print_bytecode(bytecode: &[u8]) {
         
         // 读取并打印操作数
         let mut operand_bytes = [0u8; 8];
-        if i + 1 <= bytecode.len() - 8 {
+        if i < bytecode.len() - 8 {
             operand_bytes.copy_from_slice(&bytecode[i+1..i+9]);
             let operand = u64::from_le_bytes(operand_bytes);
             print!("{:016X}", operand);

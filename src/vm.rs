@@ -115,9 +115,10 @@ pub struct VM {
     global_vars: Vec<Value>,
     functions: Vec<FunctionInfo>,
     stack: Vec<Value>,
+    entrypoint: u16,
+
     pc: usize, // 程序计数器
     fp: usize, // 栈帧指针
-    entrypoint: u16,
 }
 
 impl VM {

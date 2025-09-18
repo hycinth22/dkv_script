@@ -33,7 +33,7 @@ impl Parser {
             (TokenType::FloatLiteral(_), TokenType::FloatLiteral(_)) => true,
             (TokenType::BoolLiteral(_), TokenType::BoolLiteral(_)) => true,
             (TokenType::StringLiteral(_), TokenType::StringLiteral(_)) => true,
-            _ => &self.current_token.token_type == &expected_type
+            _ => self.current_token.token_type == expected_type
         };
         
         if !tokens_match {
