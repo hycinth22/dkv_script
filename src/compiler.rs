@@ -1,12 +1,13 @@
 use crate::{ast::ASTNode, SYSCALL};
 use core::panic;
 use std::collections::HashMap;
+use num_derive::FromPrimitive;
 
 const OPLEN: usize = 9;
 const OP_ARGOFF: usize = 1;
 
 // 字节码指令
-#[derive(Debug, Clone, Copy)]
+#[derive(FromPrimitive, Debug, Clone, Copy)]
 pub enum OpCode {
     LoadConst = 0x01,
     LoadGlobal = 0x02,

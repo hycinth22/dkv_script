@@ -424,33 +424,30 @@ impl VM {
     }
 }
 
+use num_traits::FromPrimitive;
 impl OpCode {
     fn from_byte(byte: u8) -> OpCode {
-        match byte {
-            0x01 => OpCode::LoadConst,
-            0x02 => OpCode::LoadGlobal,
-            0x03 => OpCode::StoreGlobal,
-            0x04 => OpCode::LoadLocal,
-            0x05 => OpCode::StoreLocal,
-            0x10 => OpCode::Add,
-            0x11 => OpCode::Sub,
-            0x12 => OpCode::Mul,
-            0x13 => OpCode::Div,
-            0x14 => OpCode::Inc,
-            0x15 => OpCode::Dec,
-            0x20 => OpCode::CmpEq,
-            0x21 => OpCode::CmpNe,
-            0x22 => OpCode::CmpLt,
-            0x23 => OpCode::CmpGt,
-            0x24 => OpCode::CmpLe,
-            0x25 => OpCode::CmpGe,
-            0x50 => OpCode::Jmp,
-            0x51 => OpCode::Jz,
-            0x60 => OpCode::Call,
-            0x61 => OpCode::Ret,
-            0xFE => OpCode::Syscall,
-            0xFF => OpCode::Exit,
+        match OpCode::from_u8(byte) {
+            Some(op) => op,
             _ => panic!("Unknown opcode: {:#02x}", byte),
         }
+    }
+}
+
+impl core::convert::Into<u8> for OpCode {
+    fn into(self) -> u8 {
+        self as u8
+    }
+}
+
+impl std::fmt::Display for OpCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}(0x{:02})", self, *self as u8)
+    }
+}
+
+impl std::fmt::LowerHex for OpCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}(0x{:02x})", self, *self as u8)
     }
 }
