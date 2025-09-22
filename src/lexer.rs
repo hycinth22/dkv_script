@@ -252,7 +252,7 @@ impl Lexer {
         self.column += 1;
         let end_pos = self.current;
 
-        let text: String = self.source[start_pos + 1..end_pos - 1].iter().collect();
+        let text: String = self.source[start_pos..end_pos - 1].iter().collect();
         Token::new(TokenType::StringLiteral(text), self.line, start_column)
     }
 }
