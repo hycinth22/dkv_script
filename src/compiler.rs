@@ -216,24 +216,24 @@ impl Compiler {
                 }
             },
             ASTNode::VariableDecl(name, _type, initializer) => {
-                if let Some(expr) = initializer {
+                let const_index = if let Some(expr) = initializer {
                     // 根据表达式生成初始化字节码
-                    self.visit_expression(expr, bytecode);
+                    self.visit_expression(expr, bytecode)
                 } else {
                     // 默认值
-                    match _type.as_str() {
+                    Some(match _type.as_str() {
                         "int" => self.add_constant(Constant::Int(0)),
                         "float" => self.add_constant(Constant::Float(0.0)),
                         "bool" => self.add_constant(Constant::Bool(false)),
                         "string" => self.add_constant(Constant::String("".to_string())),
                         _ => panic!("Unknown type: {}", _type),
-                    };
+                    })
                 };
 
                 if self.in_global_scope {
                     self.global_vars.push(GlobalVarInfo {
                         name: name.clone(),
-                        const_index: None,
+                        const_index: const_index,
                     });
                     let global_index = (self.global_vars.len() - 1) as u16;
                     self.global_var_map.insert(name.clone(), global_index as usize);
@@ -242,7 +242,7 @@ impl Compiler {
                 } else {
                     self.current_local_vars.push(LocalVarInfo {
                         name: name.clone(),
-                        const_index: None,
+                        const_index: const_index,
                     });
                     let local_index = self.current_local_vars.len() as u8;
                     self.current_local_vars_map.insert(name.clone(), local_index as usize);
@@ -420,23 +420,27 @@ impl Compiler {
         }
     }
 
-    fn visit_expression(&mut self, expr: &ASTNode, bytecode: &mut Vec<u8>) {
+    fn visit_expression(&mut self, expr: &ASTNode, bytecode: &mut Vec<u8>) -> Option<u16> {
         match expr {
             ASTNode::IntLiteral(value) => {
                 let const_idx = self.add_constant(Constant::Int(*value));
                 self.emit_load_const(bytecode, const_idx);
+                Some(const_idx)
             },
             ASTNode::FloatLiteral(value) => {
                 let const_idx = self.add_constant(Constant::Float(*value));
                 self.emit_load_const(bytecode, const_idx);
+                Some(const_idx)
             }
             ASTNode::BoolLiteral(value) => {
                 let const_idx = self.add_constant(Constant::Bool(*value));
                 self.emit_load_const(bytecode, const_idx);
+                Some(const_idx)
             }
             ASTNode::StringLiteral(value) => {
                 let const_idx = self.add_constant(Constant::String(value.clone()));
                 self.emit_load_const(bytecode, const_idx);
+                Some(const_idx)
             }
             ASTNode::Identifier(name) => {
                 if let Some(local_index) = self.lookup_local(name) {
@@ -447,6 +451,7 @@ impl Compiler {
                 } else {
                     panic!("Unknown identifier: {}", name);
                 }
+                None
             },
             ASTNode::BinaryExpr(left, op, right) => {
                 // 从左到右求值
@@ -470,6 +475,7 @@ impl Compiler {
                 
                 // 执行运算
                 self.emit_opcode(bytecode, opcode);
+                None
             },
             ASTNode::UnaryExpr(op, expr) => {
                 self.visit_expression(expr, bytecode);
@@ -484,6 +490,7 @@ impl Compiler {
                     },
                     _ => panic!("Unknown unary operator: {}", op),
                 }
+                None
             },
             _ => panic!("Unexpected expression type {:?}", *expr),
         }

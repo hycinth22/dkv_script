@@ -1,8 +1,10 @@
 let count: int = 0;
-  
+let msg: string = "hi";
+
 print("gsdds");
 print(123.4567);
 print(true);
+print(msg);
 
 fn main() {
     while count < 5 {
