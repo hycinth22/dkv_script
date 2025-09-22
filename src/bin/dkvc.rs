@@ -11,6 +11,7 @@ fn main() {
         println!("  run        Run DKV script file");
         println!("  execute    Execute compiled binary file");
         println!("  tokenize   Display token sequence for debugging");
+        println!("  print_ast  Display abstract syntax tree for debugging");
         return;
     }
 
@@ -38,6 +39,11 @@ fn main() {
                 eprintln!("Error tokenizing file: {}", err);
             }
         },
+        "print_ast" => {
+            if let Err(err) = print_ast_file(file_path) {
+                eprintln!("Error printing AST: {}", err);
+            }
+        },
         _ => {
             println!("Unknown command: {}", command);
         },
@@ -61,6 +67,18 @@ fn tokenize_file(file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     for token in tokens {
         println!("{:?} at line {}, column {}", token.token_type, token.line, token.column);
     }
+    
+    Ok(())
+}
+
+fn print_ast_file(file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let source = std::fs::read_to_string(file_path)?;
+    let lexer = Lexer::new(source);
+    let mut parser = Parser::new(lexer);
+    let ast = parser.parse();
+    
+    println!("Abstract Syntax Tree:");
+    println!("{:#?}", ast);
     
     Ok(())
 }
