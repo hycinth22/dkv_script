@@ -1,4 +1,4 @@
-use crate::ast::ASTNode;
+use crate::{ast::ASTNode, SYSCALL};
 use core::panic;
 use std::collections::HashMap;
 
@@ -90,7 +90,7 @@ pub struct Compiler {
     // 符号表
     global_var_map: HashMap<String, usize>,
     function_map: HashMap<String, u16>,
-    syscall_map: HashMap<String, u8>, // syscall函数列表，存储函数名和对应的系统调用编号
+    syscall_map: HashMap<String, SYSCALL>, // syscall函数列表，存储函数名和对应的系统调用编号
 
     // 用于跟踪当前函数
     current_local_vars: Vec<LocalVarInfo>,
@@ -107,11 +107,7 @@ impl Default for Compiler {
 impl Compiler {
     pub fn new() -> Self {
         let mut syscall_map = HashMap::new();
-        syscall_map.insert("print".to_string(), 1);
-        syscall_map.insert("input".to_string(), 2);
-        syscall_map.insert("time".to_string(), 3);
-        syscall_map.insert("exit".to_string(), 4);
-        syscall_map.insert("sleep".to_string(), 5);
+        syscall_map.insert("print".to_string(), SYSCALL::PRINT);
         
         Compiler {
             constants: Vec::new(),

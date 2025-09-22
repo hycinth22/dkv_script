@@ -15,6 +15,20 @@ pub use parser::Parser;
 pub use token::TokenType;
 pub use vm::VM;
 
+#[derive(Debug, Clone, Copy)]
+enum SYSCALL {
+    PRINT = 0x01,
+}
+
+impl From<u16> for SYSCALL {
+    fn from(value: u16) -> Self {
+        match value {
+            0x01 => SYSCALL::PRINT,
+            _ => panic!("Invalid syscall id"),
+        }
+    }
+}
+
 /// 编译源代码的便捷函数
 pub fn do_compile(source: &str) -> Result<CompileResult, Box<dyn std::error::Error>> {
     // 词法分析

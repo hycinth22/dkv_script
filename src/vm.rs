@@ -1,4 +1,4 @@
-use crate::compiler::{CompileResult, Constant, FunctionInfo, OpCode};
+use crate::{compiler::{CompileResult, Constant, FunctionInfo, OpCode}, SYSCALL};
 
 // 运行时值类型
 #[derive(Debug, Clone)]
@@ -318,7 +318,17 @@ impl VM {
                     break;
                 },
                 OpCode::Syscall => {
-                    // 系统调用（简化版）
+                    let syscall_id = self.read_u16(bytecode);
+                    match SYSCALL::from(syscall_id) {
+                        SYSCALL::PRINT => {
+                            if let Some(value) = self.stack.pop() {
+                                self.print_value(&value);
+                            } else {
+                                panic!("Stack underflow in syscall 0x01");
+                            }
+                        },
+                        _ => panic!("Unknown syscall ID: 0x{:02x}", syscall_id),
+                    }
                 },
                 OpCode::Exit => {
                     // 退出程序执行
