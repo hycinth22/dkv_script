@@ -8,6 +8,7 @@ const OP_ARGOFF: usize = 1;
 
 // 字节码指令
 #[derive(FromPrimitive, Debug, Clone, Copy)]
+#[repr(u8)]
 pub enum OpCode {
     LoadConst = 0x01,
     LoadGlobal = 0x02,

@@ -11,6 +11,7 @@ pub enum Value {
 }
 
 // 比较函数
+#[inline]
 fn eq_values(a: &Value, b: &Value) -> bool {
     match (a, b) {
         (Value::Int(x), Value::Int(y)) => x == y,
@@ -22,22 +23,26 @@ fn eq_values(a: &Value, b: &Value) -> bool {
     }
 }
 
+#[inline]
 fn ne_values(a: &Value, b: &Value) -> bool {
     !eq_values(a, b)
 }
 
+#[inline]
 fn lt_values(a: &Value, b: &Value) -> bool {
     match (a, b) {
         (Value::Int(x), Value::Int(y)) => x < y,
         (Value::Float(x), Value::Float(y)) => x < y,
-        _ => panic!("Invalid types for less than comparison"),
+        _ => panic!("Invalid types {:?} and {:?} for less than comparison", a, b),
     }
 }
 
+#[inline]
 fn le_values(a: &Value, b: &Value) -> bool {
     lt_values(a, b) || eq_values(a, b)
 }
 
+#[inline]
 fn gt_values(a: &Value, b: &Value) -> bool {
     match (a, b) {
         (Value::Int(x), Value::Int(y)) => x > y,
@@ -46,11 +51,13 @@ fn gt_values(a: &Value, b: &Value) -> bool {
     }
 }
 
+#[inline]
 fn ge_values(a: &Value, b: &Value) -> bool {
     gt_values(a, b) || eq_values(a, b)
 }
 
 // 算术运算函数
+#[inline]
 fn add_values(a: &Value, b: &Value) -> Value {
     match (a, b) {
         (Value::Int(x), Value::Int(y)) => Value::Int(x + y),
@@ -60,6 +67,7 @@ fn add_values(a: &Value, b: &Value) -> Value {
     }
 }
 
+#[inline]
 fn sub_values(a: &Value, b: &Value) -> Value {
     match (a, b) {
         (Value::Int(x), Value::Int(y)) => Value::Int(x - y),
@@ -68,6 +76,7 @@ fn sub_values(a: &Value, b: &Value) -> Value {
     }
 }
 
+#[inline]
 fn inc_values(a: &Value) -> Value {
     match a {
         Value::Int(x) => Value::Int(x + 1),
@@ -76,6 +85,7 @@ fn inc_values(a: &Value) -> Value {
     }
 }
 
+#[inline]
 fn dec_values(a: &Value) -> Value {
     match a {
         Value::Int(x) => Value::Int(x - 1),
@@ -84,6 +94,7 @@ fn dec_values(a: &Value) -> Value {
     }
 }
 
+#[inline]
 fn mul_values(a: &Value, b: &Value) -> Value {
     match (a, b) {
         (Value::Int(x), Value::Int(y)) => Value::Int(x * y),
@@ -92,6 +103,7 @@ fn mul_values(a: &Value, b: &Value) -> Value {
     }
 }
 
+#[inline]
 fn div_values(a: &Value, b: &Value) -> Value {
     match (a, b) {
         (Value::Int(x), Value::Int(y)) => {
@@ -173,8 +185,8 @@ impl VM {
             panic!("Function index out of bounds: {}", func_index);
         }
 
-        // 复制函数信息以避免可变借用冲突
-        let func = self.functions[func_index as usize].clone();
+        let func = &self.functions[func_index as usize];
+        println!("Calling function: {}", func.name);
         let old_fp = self.fp;
         let return_addr = self.pc;
 
@@ -189,16 +201,27 @@ impl VM {
         self.pc = 0;
 
         // 执行函数
-        self.execute_bytecode(&func.bytecode);
+        self.execute_function(func_index);
 
         // 函数返回后恢复状态
         self.fp = old_fp;
     }
 
+    fn execute_function(&mut self, func_index: u16) {
+        if func_index >= self.functions.len() as u16 {
+            panic!("Function index out of bounds: {}", func_index);
+        }
+
+        let func = self.functions[func_index as usize].clone();
+        self.execute_bytecode(&func.bytecode);
+    }
+
     fn execute_bytecode(&mut self, bytecode: &[u8]) {
         while self.pc < bytecode.len() {
+            println!("PC: {}", self.pc);
             let opcode = OpCode::from_byte(bytecode[self.pc]);
-            self.pc += 2;
+            println!("Executing opcode: {:02x}", opcode);
+            self.pc += 1;
 
             match opcode {
                 OpCode::LoadConst => {
@@ -335,18 +358,27 @@ impl VM {
                     break;
                 },
             }
+            self.pc += 8;
         }
     }
 
     fn read_u16(&mut self, bytecode: &[u8]) -> u16 {
         let value = u16::from_le_bytes([bytecode[self.pc], bytecode[self.pc + 1]]);
-        self.pc += 8; // 跳过整个 8 字节操作数
         value
     }
 
     fn read_i16(&mut self, bytecode: &[u8]) -> i16 {
         let value = i16::from_le_bytes([bytecode[self.pc], bytecode[self.pc + 1]]);
-        self.pc += 8; // 跳过整个 8 字节操作数
+        value
+    }
+
+    fn read_u64(&mut self, bytecode: &[u8]) -> u64 {
+        let value = u64::from_le_bytes([bytecode[self.pc], bytecode[self.pc + 1], bytecode[self.pc + 2], bytecode[self.pc + 3], bytecode[self.pc + 4], bytecode[self.pc + 5], bytecode[self.pc + 6], bytecode[self.pc + 7]]);
+        value
+    }
+
+    fn read_i64(&mut self, bytecode: &[u8]) -> i64 {
+        let value = i64::from_le_bytes([bytecode[self.pc], bytecode[self.pc + 1], bytecode[self.pc + 2], bytecode[self.pc + 3], bytecode[self.pc + 4], bytecode[self.pc + 5], bytecode[self.pc + 6], bytecode[self.pc + 7]]);
         value
     }
 
@@ -367,51 +399,6 @@ impl VM {
             panic!("Stack underflow in comparison operation");
         }
     }
-
-    fn add_values(&self, a: &Value, b: &Value) -> Value {
-        match (a, b) {
-            (Value::Int(x), Value::Int(y)) => Value::Int(x + y),
-            (Value::Float(x), Value::Float(y)) => Value::Float(x + y),
-            (Value::String(x), Value::String(y)) => Value::String(format!("{}{}", x, y)),
-            _ => panic!("Invalid types for addition"),
-        }
-    }
-
-    fn sub_values(&self, a: &Value, b: &Value) -> Value {
-        match (a, b) {
-            (Value::Int(x), Value::Int(y)) => Value::Int(x - y),
-            (Value::Float(x), Value::Float(y)) => Value::Float(x - y),
-            _ => panic!("Invalid types for subtraction"),
-        }
-    }
-
-    fn mul_values(&self, a: &Value, b: &Value) -> Value {
-        match (a, b) {
-            (Value::Int(x), Value::Int(y)) => Value::Int(x * y),
-            (Value::Float(x), Value::Float(y)) => Value::Float(x * y),
-            _ => panic!("Invalid types for multiplication"),
-        }
-    }
-
-    fn div_values(&self, a: &Value, b: &Value) -> Value {
-        match (a, b) {
-            (Value::Int(x), Value::Int(y)) => {
-                if *y == 0 {
-                    panic!("Division by zero");
-                }
-                Value::Int(x / y)
-            },
-            (Value::Float(x), Value::Float(y)) => {
-                if *y == 0.0 {
-                    panic!("Division by zero");
-                }
-                Value::Float(x / y)
-            },
-            _ => panic!("Invalid types for division"),
-        }
-    }
-
-
 
     fn print_value(&self, value: &Value) {
         match value {

@@ -16,6 +16,7 @@ pub use token::TokenType;
 pub use vm::VM;
 
 #[derive(Debug, Clone, Copy)]
+#[repr(u16)]
 enum SYSCALL {
     PRINT = 0x01,
 }
