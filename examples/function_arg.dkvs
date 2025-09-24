@@ -1,0 +1,26 @@
+fn fint(a int) {
+    print("fint");
+    print(a);
+}
+fn fintint(a int, b int) {
+    let x : int = 0;
+    print("fintint");
+    print(a);
+    print(b);
+}
+fn fstring(a string) {
+    print("fstring");
+    print(a);
+}
+fn fstringstring(a string, b string) {
+    let x : string = "";
+    print("fstringstring");
+    print(a);
+    print(b);
+}
+fn main() {
+    fint(111);
+    fintint(222, 233);
+    fstring("s0");
+    fstringstring("s1", "s2");
+}

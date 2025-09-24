@@ -208,6 +208,15 @@ impl VM {
         let return_addr = self.pc;
         println!("Call function {} old_fp:{} return addr: {}", func.name, old_fp, return_addr);
 
+        // 检查参数数量（栈上的参数数量必须大于等于参数数量）
+        // stack为空时代表入口点函数，此时不必检查
+        if !self.stack.is_empty() && func.param_count as usize > self.stack.len() - old_fp - 2 {
+            panic!("Incorrect number of arguments for function {}: expected {}, got {}", func.name, func.param_count, self.stack.len() - old_fp - 2);
+        }
+        let args = (0..func.param_count).into_iter().map(|_i| {
+            self.stack.pop().unwrap()
+        }).collect::<Vec<_>>();
+
         // 保存返回地址和旧的帧指针
         self.stack.push(Value::Int(return_addr as i32));
         self.stack.push(Value::Int(old_fp as i32));
@@ -218,6 +227,13 @@ impl VM {
         // 设置程序计数器到函数的字节码开始位置
         self.pc = 0;
 
+        // 压入参数
+        self.stack.extend(args.into_iter());
+        // 准备局部变量
+        for _ in 0..func.local_count-func.param_count {
+            self.stack.push(Value::Null);
+        }
+    
         // 执行函数
         self.execute_function(func_index);
         println!("Call function return");
@@ -269,6 +285,7 @@ impl VM {
                 },
                 OpCode::LoadLocal => {
                     let local_index = self.read_u16(bytecode);
+                    println!("Load local {} fp:{}", local_index, self.fp);
                     let stack_index = self.fp + 2 + local_index as usize;
                     if stack_index < self.stack.len() {
                         let value = self.stack[stack_index].clone();
@@ -279,6 +296,7 @@ impl VM {
                 },
                 OpCode::StoreLocal => {
                     let local_index = self.read_u16(bytecode);
+                    println!("Store local {} fp:{}", local_index, self.fp);
                     let stack_index = self.fp + 2 + local_index as usize;
                     if stack_index < self.stack.len() {
                         if let Some(value) = self.stack.pop() {

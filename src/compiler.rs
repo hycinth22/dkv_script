@@ -86,7 +86,6 @@ pub struct Compiler {
     constants: Vec<Constant>,
     global_vars: Vec<GlobalVarInfo>,
     functions: Vec<FunctionInfo>,
-    entrypoint_function_index: u16,
     main_function_index: u16,
 
     // 符号表
@@ -115,7 +114,6 @@ impl Compiler {
             constants: Vec::new(),
             global_vars: Vec::new(),
             functions: Vec::new(),
-            entrypoint_function_index: 0,
             main_function_index: u16::MAX,
 
             global_var_map: HashMap::new(),
@@ -248,8 +246,9 @@ impl Compiler {
                         name: name.clone(),
                         const_index: const_index,
                     });
-                    let local_index = self.current_local_vars.len() as u8;
+                    let local_index = (self.current_local_vars.len() - 1) as u8;
                     self.current_local_vars_map.insert(name.clone(), local_index as usize);
+                    println!("Add local {} index:{}", name, local_index);
                     // 为局部变量生成初始化字节码
                     self.emit_store_local(bytecode, local_index);
                 }
@@ -390,7 +389,8 @@ impl Compiler {
                 self.current_local_vars_map.clear();
             },
             ASTNode::FunctionCall(name, args) => {
-                for arg in args {
+                // 参数逆序入栈
+                for arg in args.iter().rev() {
                     self.visit_expression(arg, bytecode);
                 }
 

@@ -207,15 +207,19 @@ impl Parser {
                     name.clone()
                 } else {
                     panic!("Expected parameter name")
-                  };                   
-                    self.advance(); // 跳过参数名
+                };                   
+                self.advance(); // 跳过参数名
 
-                let type_name = if let TokenType::Identifier(type_name) = &self.current_token.token_type {
-                type_name.clone()
-            } else {
-                panic!("Expected parameter type")
-            };
-            self.advance(); // 跳过参数类型
+
+                let type_name = match &self.current_token.token_type {
+                    TokenType::Int => "int".to_string(),
+                    TokenType::Float => "float".to_string(),
+                    TokenType::Bool => "bool".to_string(),
+                    TokenType::String => "string".to_string(),
+                    TokenType::Identifier(type_name) => type_name.clone(),
+                    _ => panic!("Expected valid type after colon: {:?}", self.current_token.token_type)
+                };
+                self.advance(); // 跳过参数类型
 
                 params.push((name, type_name));
 
