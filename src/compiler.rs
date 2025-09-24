@@ -116,7 +116,7 @@ impl Compiler {
             global_vars: Vec::new(),
             functions: Vec::new(),
             entrypoint_function_index: 0,
-            main_function_index: 0,
+            main_function_index: u16::MAX,
 
             global_var_map: HashMap::new(),
             function_map: HashMap::new(),
@@ -131,6 +131,9 @@ impl Compiler {
         self.add_constant(Constant::Nil);
         let mut entrypoint_bytecode = Vec::new();
         self.visit_ast_with_bytecode(ast, &mut entrypoint_bytecode);
+        if self.main_function_index == u16::MAX {
+            panic!("main function not found");
+        }
         self.emit_opcode_with_arg(&mut entrypoint_bytecode, OpCode::Call, self.main_function_index as u64);
         self.emit_opcode(&mut entrypoint_bytecode, OpCode::Exit);
         self.functions.push(FunctionInfo {
@@ -343,7 +346,7 @@ impl Compiler {
                 let func_index = self.functions.len() as u16;
                 self.function_map.insert(name.clone(), func_index);
                 if name == "main" {
-                    self.entrypoint_function_index = func_index;
+                    self.main_function_index = func_index;
                 }
 
                 // 记录参数作为局部变量
