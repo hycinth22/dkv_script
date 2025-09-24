@@ -272,7 +272,7 @@ impl Compiler {
                 self.emit_opcode_with_arg(bytecode, OpCode::Jmp, 0);
 
                 // 填充 JZ 的偏移量
-                let jz_offset = bytecode.len() - jz_pos - OPLEN;
+                let jz_offset = bytecode.len() - jz_pos;
                 self.set_arg_at(bytecode, jz_pos, jz_offset as u64);
                 // 写入else分支
                 if let Some(else_block) = else_branch {
@@ -280,7 +280,7 @@ impl Compiler {
                 }
 
                 // 填充 JMP 的偏移量
-                let jmp_offset = bytecode.len() - jmp_pos - OPLEN;
+                let jmp_offset = bytecode.len() - jmp_pos;
                 self.set_arg_at(bytecode, jmp_pos, jmp_offset as u64);
             },
             ASTNode::ForLoop(init, condition, update, body) => {
@@ -320,11 +320,11 @@ impl Compiler {
                 }
 
                 // 跳回循环开始
-                let jmp_offset = loop_start as i64 - bytecode.len() as i64 - OPLEN as i64;
+                let jmp_offset = loop_start as i64 - bytecode.len() as i64;
                 self.emit_opcode_with_arg(bytecode, OpCode::Jmp, jmp_offset as u64);
 
                 // 填充 JZ 的偏移量
-                let jz_offset = bytecode.len() - jz_pos - OPLEN;
+                let jz_offset = bytecode.len() - jz_pos;
                 self.set_arg_at(bytecode, jz_pos, jz_offset as u64);
             },
             ASTNode::WhileLoop(condition, body) => {
