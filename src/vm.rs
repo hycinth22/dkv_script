@@ -203,9 +203,7 @@ impl VM {
 
         // 执行函数
         self.execute_function(func_index);
-
-        // 函数返回后恢复状态
-        self.fp = old_fp;
+        println!("Call function return");
     }
 
     fn execute_function(&mut self, func_index: u16) {
@@ -341,14 +339,24 @@ impl VM {
                     self.pc += 1;
                 },
                 OpCode::Ret => {
+                    // 弹出返回值
+                    let Some(rv) = self.stack.pop() else {
+                        panic!("ret: return value missing in stack")
+                    };
+                    // 保存程序计数器和帧指针
+                    let Some(Value::Int(return_addr)) = self.stack.get(self.fp).cloned() else {
+                        panic!("invalid return_addr. fp: {}", self.fp);
+                    };
+                    let Some(Value::Int(old_fp)) = self.stack.get(self.fp + 1).cloned() else {
+                        panic!("invalid old_fp. fp: {}", self.fp);
+                    };
+                    // 清理栈帧
+                    self.stack.truncate(self.fp);
+                    // 压入返回值
+                    self.stack.push(rv);
                     // 恢复程序计数器和帧指针
-                    if let Some(Value::Int(fp)) = self.stack.get(self.fp + 1) {
-                        self.fp = *fp as usize;
-                    }
-                    if let Some(Value::Int(return_addr)) = self.stack.get(self.fp) {
-                        self.pc = *return_addr as usize;
-                    }
-                    // 弹出返回值（如果有）
+                    self.pc = return_addr as usize;
+                    self.fp = old_fp as usize;
                     return;
                 },
                 OpCode::Syscall => {
@@ -366,7 +374,7 @@ impl VM {
                 },
                 OpCode::Exit => {
                     // 退出程序执行
-                    break;
+                    return;
                 },
             }
             self.pc += 8;
