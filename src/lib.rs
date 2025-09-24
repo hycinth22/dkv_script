@@ -9,7 +9,7 @@ mod vm;
 // 公共 API 导出
 pub use ast::*;
 pub use bin_format::{load_from_file, save_to_file};
-pub use compiler::{CompileResult, Compiler, Constant, GlobalVarInfo, FunctionInfo};
+pub use compiler::{CompileResult, Compiler, Constant, GlobalVarInfo, FunctionInfo, OpCode};
 pub use lexer::Lexer;
 pub use parser::Parser;
 pub use token::TokenType;
