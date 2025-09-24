@@ -317,12 +317,20 @@ impl VM {
                 OpCode::CmpGe => self.comparison_operation(ge_values),
                 OpCode::Jmp => {
                     let offset = self.read_i16(bytecode) as isize;
-                    self.pc = (self.pc as isize + offset) as usize;
+                    self.pc = (self.pc as isize -1 + offset) as usize;
+                    continue;
                 },
                 OpCode::Jz => {
                     let offset = self.read_i16(bytecode) as isize;
-                    if let Some(Value::Bool(false)) = self.stack.last() {
-                        self.pc = (self.pc as isize + offset) as usize;
+                    if let Some(Value::Bool(x)) = self.stack.last() {
+                        if *x {
+                            // do nothing
+                        } else {
+                            self.pc = (self.pc as isize -1 + offset) as usize;
+                            continue;
+                        }
+                    } else {
+                        panic!("Jz operator applied to non-bool value");
                     }
                 },
                 OpCode::Call => {
