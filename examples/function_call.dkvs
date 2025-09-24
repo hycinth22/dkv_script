@@ -1,0 +1,26 @@
+fn fint() {
+    print("fint");
+    return 1;
+}
+fn fstring() {
+    print("fstring");
+    return "hello";
+}
+
+fn fmultilayer1() {
+    return 42;
+}
+
+fn fmultilayer2() {
+    return fmultilayer1()+1;
+}
+
+fn fmultilayer3() {
+    return fmultilayer2()+2;
+}
+
+fn main() {
+    print(fint());
+    print(fstring());
+    print(fmultilayer3());
+}

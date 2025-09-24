@@ -454,6 +454,18 @@ impl Compiler {
                 }
                 None
             },
+            ASTNode::FunctionCall(name, args) => {
+                for arg in args {
+                    self.visit_expression(arg, bytecode);
+                }
+                let func_index = if let Some(index) = self.function_map.get(name) {
+                    *index
+                } else {
+                    panic!("Unknown function: {}", name);
+                };
+                self.emit_opcode_with_arg(bytecode, OpCode::Call, func_index as u64);
+                None
+            },
             ASTNode::BinaryExpr(left, op, right) => {
                 // 从左到右求值
                 self.visit_expression(left, bytecode);
