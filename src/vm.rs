@@ -321,8 +321,8 @@ impl VM {
                 },
                 OpCode::Jz => {
                     let offset = self.read_i16(bytecode) as isize;
-                    if let Some(Value::Bool(x)) = self.stack.last() {
-                        if *x {
+                    if let Some(Value::Bool(x)) = self.stack.pop() {
+                        if x {
                             // do nothing
                         } else {
                             self.pc = (self.pc as isize -1 + offset) as usize;
