@@ -187,8 +187,9 @@ impl VM {
 
         let func = &self.functions[func_index as usize];
         println!("Calling function: {}", func.name);
-        let old_fp = self.fp;
+        let old_fp: usize = self.fp;
         let return_addr = self.pc;
+        println!("Call function {} old_fp:{} return addr: {}", func.name, old_fp, return_addr);
 
         // 保存返回地址和旧的帧指针
         self.stack.push(Value::Int(return_addr as i32));
@@ -335,7 +336,9 @@ impl VM {
                 },
                 OpCode::Call => {
                     let func_index = self.read_u16(bytecode);
+                    self.pc -= 1;
                     self.call_function(func_index);
+                    self.pc += 1;
                 },
                 OpCode::Ret => {
                     // 恢复程序计数器和帧指针
@@ -346,7 +349,7 @@ impl VM {
                         self.pc = *return_addr as usize;
                     }
                     // 弹出返回值（如果有）
-                    break;
+                    return;
                 },
                 OpCode::Syscall => {
                     let syscall_id = self.read_u16(bytecode);
