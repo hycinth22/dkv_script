@@ -86,6 +86,23 @@ fn inc_values(a: &Value) -> Value {
 }
 
 #[inline]
+fn not_values(a: &Value) -> Value {
+    match a {
+        Value::Bool(x) => Value::Bool(!x),
+        _ => panic!("Invalid type for not operation"),
+    }
+}
+
+#[inline]
+fn neg_values(a: &Value) -> Value {
+    match a {
+        Value::Int(x) => Value::Int(-x),
+        Value::Float(x) => Value::Float(-x),
+        _ => panic!("Invalid type for negation"),
+    }
+}
+
+#[inline]
 fn dec_values(a: &Value) -> Value {
     match a {
         Value::Int(x) => Value::Int(x - 1),
@@ -217,6 +234,7 @@ impl VM {
 
     fn execute_bytecode(&mut self, bytecode: &[u8]) {
         while self.pc < bytecode.len() {
+            println!("Stack: {:?}", self.stack);
             println!("PC: {}", self.pc);
             let opcode = OpCode::from_byte(bytecode[self.pc]);
             println!("Executing opcode: {:02x}", opcode);
@@ -272,42 +290,14 @@ impl VM {
                         panic!("Local variable index out of bounds: {}", local_index);
                     }
                 },
-                OpCode::Not => {
-                    if let Value::Bool(b) = self.stack.pop().unwrap() {
-                        self.stack.push(Value::Bool(!b));
-                    } else {
-                        panic!("Not operator applied to non-bool value");
-                    }
-                },
-                OpCode::Neg => {
-                    if let Value::Int(i) = self.stack.pop().unwrap() {
-                        self.stack.push(Value::Int(-i));
-                    } else {
-                        panic!("Neg operator applied to non-int value");
-                    }
-                }
                 OpCode::Add => self.binary_operation(add_values),
                 OpCode::Sub => self.binary_operation(sub_values),
                 OpCode::Mul => self.binary_operation(mul_values),
                 OpCode::Div => self.binary_operation(div_values),
-                OpCode::Inc => {
-                    let var_index = self.read_u16(bytecode);
-                    if var_index < self.global_vars.len() as u16 {
-                        let current_value = self.global_vars[var_index as usize].clone();
-                        self.global_vars[var_index as usize] = inc_values(&current_value);
-                    } else {
-                        panic!("Global variable index out of bounds for increment: {}", var_index);
-                    }
-                },
-                OpCode::Dec => {
-                    let var_index = self.read_u16(bytecode);
-                    if var_index < self.global_vars.len() as u16 {
-                        let current_value = self.global_vars[var_index as usize].clone();
-                        self.global_vars[var_index as usize] = dec_values(&current_value);
-                    } else {
-                        panic!("Global variable index out of bounds for decrement: {}", var_index);
-                    }
-                },
+                OpCode::Not => self.unary_operation(not_values),
+                OpCode::Inc => self.unary_operation(inc_values),
+                OpCode::Dec => self.unary_operation(dec_values),
+                OpCode::Neg => self.unary_operation(neg_values),
                 OpCode::CmpEq => self.comparison_operation(eq_values),
                 OpCode::CmpNe => self.comparison_operation(ne_values),
                 OpCode::CmpLt => self.comparison_operation(lt_values),
@@ -399,6 +389,15 @@ impl VM {
     fn read_i64(&mut self, bytecode: &[u8]) -> i64 {
         let value = i64::from_le_bytes([bytecode[self.pc], bytecode[self.pc + 1], bytecode[self.pc + 2], bytecode[self.pc + 3], bytecode[self.pc + 4], bytecode[self.pc + 5], bytecode[self.pc + 6], bytecode[self.pc + 7]]);
         value
+    }
+
+    fn unary_operation(&mut self, op: fn(&Value) -> Value) {
+        if let Some(a) = self.stack.pop() {
+            let result = op(&a);
+            self.stack.push(result);
+        } else {
+            panic!("Stack underflow in unary operation");
+        }
     }
 
     fn binary_operation(&mut self, op: fn(&Value, &Value) -> Value) {
