@@ -129,20 +129,23 @@ impl Compiler {
 
     pub fn compile(mut self, ast: &ASTNode) -> CompileResult {
         self.add_constant(Constant::Nil);
-        let mut entrypoint_bytecode = Vec::new();
-        self.visit_ast_with_bytecode(ast, &mut entrypoint_bytecode);
-        if self.main_function_index == u16::MAX {
-            panic!("main function not found");
-        }
-        self.emit_opcode_with_arg(&mut entrypoint_bytecode, OpCode::Call, self.main_function_index as u64);
-        self.emit_opcode(&mut entrypoint_bytecode, OpCode::Exit);
-        self.functions.push(FunctionInfo {
-            name: "_entrypoint".to_string(),
-            param_count: 0,
-            local_count: 0,
-            bytecode: entrypoint_bytecode,
-        });
-        let entrypoint_function_index = self.functions.len() as u16 - 1;
+        // Generate Entrypoint Function
+        let entrypoint_function_index = {
+            let mut entrypoint_bytecode = Vec::new();
+            self.visit_ast_with_bytecode(ast, &mut entrypoint_bytecode);
+            if self.main_function_index != u16::MAX {
+                self.emit_opcode_with_arg(&mut entrypoint_bytecode, OpCode::Call, self.main_function_index as u64);
+            }
+            self.emit_opcode(&mut entrypoint_bytecode, OpCode::Exit);
+
+            self.functions.push(FunctionInfo {
+                name: "_entrypoint".to_string(),
+                param_count: 0,
+                local_count: 0,
+                bytecode: entrypoint_bytecode,
+            });
+            self.functions.len() as u16 - 1
+        };
         CompileResult {
             constants: self.constants,
             global_vars: self.global_vars,
