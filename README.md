@@ -1,4 +1,9 @@
-# Hello world
+# Design
+see [docs](docs)
+
+# Examples
+
+## Hello world
 
 ```
 let count: int = 0;
@@ -13,12 +18,12 @@ fn main() {
 }
 ```
 
-# expression
+## expression
 ```
 print(1 + 2 * 3 + 5);
 print(1 + 2 * (3 + 5));
 ```
-# simple loop
+## simple loop
 
 ```
 let count: int = 0;
@@ -30,7 +35,7 @@ print("count:");
 print(count);
 ```
 
-# function call & return value
+## function call & return value
 
 ```
 fn fint() {
@@ -61,7 +66,7 @@ fn main() {
 }
 ```
 
-# function call with args
+## function call with args
 
 ```
 fn fint(a int) {
