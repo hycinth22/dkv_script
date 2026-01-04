@@ -148,6 +148,9 @@ pub struct VM {
 
     pc: usize, // 程序计数器
     fp: usize, // 栈帧指针
+    
+    // DKV command handler
+    dkv_command_handler: Option<Box<dyn FnMut(&str) -> Result<String, String>>>,
 }
 
 impl VM {
@@ -160,6 +163,7 @@ impl VM {
             pc: 0,
             fp: 0,
             entrypoint: compile_result.entrypoint,
+            dkv_command_handler: None,
         };
 
         // 初始化全局变量
@@ -172,6 +176,14 @@ impl VM {
             }
         }
         vm
+    }
+    
+    /// 设置DKV命令处理函数
+    pub fn set_dkv_command_handler<F>(&mut self, handler: Option<F>) 
+    where 
+        F: FnMut(&str) -> Result<String, String> + 'static,
+    {
+        self.dkv_command_handler = handler.map(|h| Box::new(h) as Box<dyn FnMut(&str) -> Result<String, String>>);
     }
 
     pub fn run(&mut self) {
@@ -374,7 +386,22 @@ impl VM {
                             if let Some(value) = self.stack.pop() {
                                 self.print_value(&value);
                             } else {
-                                panic!("Stack underflow in syscall 0x01");
+                                panic!("Stack underflow in syscall PRINT");
+                            }
+                        },
+                        SYSCALL::DKVCOMMAND => {
+                            if let Some(Value::String(command)) = self.stack.pop() {
+                                let result = if let Some(ref mut handler) = self.dkv_command_handler {
+                                    match handler(&command) {
+                                        Ok(output) => Value::String(output),
+                                        Err(err) => Value::String(format!("Error: {}", err)),
+                                    }
+                                } else {
+                                    Value::String(format!("Error: No DKV command handler set"))
+                                };
+                                self.stack.push(result);
+                            } else {
+                                panic!("Stack underflow or invalid value type in syscall DKVCOMMAND");
                             }
                         },
                         _ => panic!("Unknown syscall ID: 0x{:02x}", syscall_id),

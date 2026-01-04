@@ -1,0 +1,39 @@
+language = "C"
+
+include_guard = "DKV_SCRIPT_H"
+
+# 输出头文件的名称
+header = "dkv_script.h"
+
+# 要包含的 Rust 模块
+rust_input = "src/lib.rs"
+
+# 导出的函数前缀
+function_prefix = "dkv_script_"
+
+# 忽略的宏
+ignore_macros = [
+    "TODO",
+]
+
+# 类型别名
+[type.pointer]
+nullable = true
+const = true
+
+# 结构体配置
+[struct]
+derive_eq = true
+
+# 导出配置
+[export]
+include = [
+    "DkvScriptVM",
+    "DkvScriptCompileResult",
+    "dkv_script_compile",
+    "dkv_script_create_vm",
+    "dkv_script_run_vm",
+    "dkv_script_free_compile_result",
+    "dkv_script_free_vm",
+    "dkv_script_set_dkv_command_handler",
+]

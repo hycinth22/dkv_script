@@ -3,6 +3,13 @@ name = "dkv_script"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 num-derive = "0.4.2"
 num-traits = "0.2.19"
+libc = "0.2.155"
+
+[build-dependencies]
+cbindgen = "0.26.0"

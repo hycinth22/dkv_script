@@ -109,7 +109,8 @@ impl Compiler {
     pub fn new() -> Self {
         let mut syscall_map = HashMap::new();
         syscall_map.insert("print".to_string(), SYSCALL::PRINT);
-        
+        syscall_map.insert("command".to_string(), SYSCALL::DKVCOMMAND);
+
         Compiler {
             constants: Vec::new(),
             global_vars: Vec::new(),
@@ -458,15 +459,24 @@ impl Compiler {
                 None
             },
             ASTNode::FunctionCall(name, args) => {
-                for arg in args {
+                // 参数逆序入栈
+                for arg in args.iter().rev() {
                     self.visit_expression(arg, bytecode);
                 }
-                let func_index = if let Some(index) = self.function_map.get(name) {
-                    *index
+
+                let syscall_num = self.syscall_map.get(name).copied();
+                if let Some(syscall_num) = syscall_num {
+                    // 是系统调用，生成Syscall指令
+                    self.emit_opcode_with_arg(bytecode, OpCode::Syscall, syscall_num as u64);
                 } else {
-                    panic!("Unknown function: {}", name);
-                };
-                self.emit_opcode_with_arg(bytecode, OpCode::Call, func_index as u64);
+                    // 不是系统调用，继续使用Call指令
+                    let func_index = if let Some(index) = self.function_map.get(name) {
+                        *index
+                    } else {
+                        panic!("Unknown function: {}", name);
+                    };
+                    self.emit_opcode_with_arg(bytecode, OpCode::Call, func_index as u64);
+                }
                 None
             },
             ASTNode::BinaryExpr(left, op, right) => {

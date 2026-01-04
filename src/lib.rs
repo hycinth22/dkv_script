@@ -1,6 +1,7 @@
 mod ast;
 mod bin_format;
 mod compiler;
+mod ffi;
 mod lexer;
 mod parser;
 mod token;
@@ -14,17 +15,20 @@ pub use lexer::Lexer;
 pub use parser::Parser;
 pub use token::TokenType;
 pub use vm::VM;
+pub use ffi::{DkvScriptCompileResult, DkvScriptVM}; // （不需要 pub use FFI 函数，因为已经用 #[no_mangle] 标记）
 
 #[derive(Debug, Clone, Copy)]
 #[repr(u16)]
 enum SYSCALL {
     PRINT = 0x01,
+    DKVCOMMAND = 0x02,
 }
 
 impl From<u16> for SYSCALL {
     fn from(value: u16) -> Self {
         match value {
             0x01 => SYSCALL::PRINT,
+            0x02 => SYSCALL::DKVCOMMAND,
             _ => panic!("Invalid syscall id"),
         }
     }
