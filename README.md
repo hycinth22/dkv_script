@@ -96,3 +96,14 @@ fn main() {
     fstringstring("s1", "s2");
 }
 ```
+
+## Cooperate with dkv db server
+
+```
+let msg: string = "hi";
+print(msg);
+
+command("SET A xxx");
+let r: string = command("GET A");
+print(r);
+```
